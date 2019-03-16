@@ -1,0 +1,8 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  mobilene:
+    lang: dockerfile
+    handler: ./mobilenet
+    image: alexellis2/mobilenet-flask:0.1
