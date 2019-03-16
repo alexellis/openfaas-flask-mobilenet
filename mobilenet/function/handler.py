@@ -33,6 +33,16 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
                                                             use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
+sess = None
+# Load a (frozen) Tensorflow model into memory.
+detection_graph = tf.Graph()
+with detection_graph.as_default():
+    od_graph_def = tf.GraphDef()
+    with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+        serialized_graph = fid.read()
+        od_graph_def.ParseFromString(serialized_graph)
+        tf.import_graph_def(od_graph_def, name='')
+        sess = tf.Session(graph=detection_graph)
 
 def detect_objects(image_np, sess, detection_graph):
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
@@ -77,22 +87,13 @@ def handle(req):
     image_np = np.array(image.getdata()).reshape(
         (im_height, im_width, 3)).astype(np.uint8)
 
-    # Load a (frozen) Tensorflow model into memory.
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.GraphDef()
-        with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
 
-        sess = tf.Session(graph=detection_graph)
 
     # Detect objects
     scores, classes, image_with_labels = detect_objects(image_np, sess, detection_graph)
     #print("\n".join("{0:<20s}: {1:.1f}%".format(category_index[c]['name'], s*100.) for (c, s) in zip(classes[0], scores[0])))
 
-    sess.close()
+#    sess.close()
 
     result = {}
     if output_image:
@@ -107,5 +108,6 @@ def handle(req):
     encoder.c_make_encoder = None
     result['detected_objects'] = [{'class': category_index[c]['name'], 'score': float(s)} for (c, s) in zip(classes[0], scores[0])]
 
-    print(json.dumps(result))
+    return json.dumps(result)
+    # print(json.dumps(result))
 
