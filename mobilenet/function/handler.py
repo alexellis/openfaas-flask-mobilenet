@@ -76,8 +76,11 @@ def detect_objects(image_np, sess, detection_graph):
 
 
 def handle(req):  
-    output_image=False
     json_req = req
+
+    output_image=False
+    if os.getenv("output_image", "False") == "True":
+        output_image = True
 
     # Load image
     filename = json_req['filename']
@@ -86,8 +89,6 @@ def handle(req):
     (im_width, im_height) = image.size
     image_np = np.array(image.getdata()).reshape(
         (im_height, im_width, 3)).astype(np.uint8)
-
-
 
     # Detect objects
     scores, classes, image_with_labels = detect_objects(image_np, sess, detection_graph)
